@@ -1,0 +1,67 @@
+Numéros des TRAPs utilisés dans TOMBEDPC.PRG et les fonctions leur correspondant
+
+0		get_joystick (in : - | out : (adr_data + 498).B = état du joystick)
+1		clear_joystick (in : - | out : -)
+2		get_keyboard (in : - | out : D0.B = code ASCII de la touche pressée ou 0, si pas de touche pressée)
+3		change_pal (in : A0.L = adresse de la nouvelle palette | out : -)
+4		wait_vbl (in : - | out : -)
+5		aff_screen (in : (adr_data + 488).L = adresse de l’écran 320x200x4 | out : -)
+6		play_sound (in : D0.B = numéro du son | out : -)
+7		end_prg (in : - | out : -)
+8		aff_transp (in : A0.L = adresse du bloc, D0.W = taille Y du bloc - 1, D1.W, D2.W = position du bloc | out : -)
+9		aff_normal (in : A0.L = adresse du bloc, D0.W = taille Y du bloc - 1, D1.W, D2.W = position du bloc | out : -)
+10		aff_white (in : A0.L = adresse du bloc, D0.W = taille Y du bloc - 1, D1.W, D2.W = position du bloc | out : -)
+
+Remarque.
+
+Les TRAPs 8, 9 et 10 ne sont pas utilisés dans la version normale de TOMBEDPC.PRG. Les blocs sont copiés dans le buffer interne par TOMBEDPC.PRG lui-même.
+
+Structure générale de la traduction C d’une instruction 68000 (première version)
+
+// Lecture de la destination
+out[0]
+(param. 1 de ReadDest) + out[1] + (param. 2 de ReadDest)
+
+// Lecture de la source
+out[2]
+(param. 1 de ReadSource) + out[3] + (param. 2 de ReadSource)
+out[4]
+
+// Ecriture de la destination
+(param. 1 de WriteDest) + out[5] + (param. 2 de WriteDest) + out[6]
+out[7]
+
+Remarque.	
+
+Cette structure obligeait l’utilisation de ReadDest et de WriteDest, d’où la nécessité du paramètre 1 de la fonction WriteDest au cas où une mise en commentaire était nécessaire…
+
+Structure générale de la traduction C d’une instruction 68000 (seconde version)
+
+// Lecture de la destination
+out[0]
+(param. 1 de ReadDest ou de ReadOnlyDest) + out[1] + (param. 2 de ReadDest ou de ReadOnlyDest)
+out[7], si appel de ReadOnlyDest à la place de ReadDest
+
+// Lecture de la source
+out[2]
+(param. 1 de ReadSource) + out[3] + (param. 2 de ReadSource)
+out[4]
+
+// Ecriture de la destination
+out[0], si appel de WriteOnlyDest à la place de WriteDest
+out[5] + (param. 1 de WriteDest ou de WriteOnlyDest) + out[6]
+out[7]
+
+Utilisation de Outf et de BufOutf
+
+void Outf (char *text, …)
+char *BufOutf (char *text, …)
+
+La fonction BufOutf renvoie un pointeur sur le début de ‘text’. Les séquences ‘%x’ contenues dans la chaîne de caractères ‘text’ sont remplacées par : 	-	un caractère de code “ASCII” 0 à 255, s’il s’agit de %a (le paramètre est un char variant de 0 à 255)
+	-	8, 16, 32 ou 64, s’il s’agit de %c (le paramètre est un Card8 variant de 0 à 3)
+	-	1, 2, 4 ou 8, s’il s’agit de %b (le paramètre est un Card8 variant de 0 à 3)
+	-	“&&Lxxx”, “adr_data + xxx” ou “adr_bss + xxx”, s’il s’agit de %d (le paramètre est un Card32 variant de 0 à la taille totale des segments TEXT, DATA et BSS - 1)
+	-	un entier signé sur 32 bits, s’il s’agit de %n (le paramètre est un Int32, un Int16 ou un Int8)
+	-	un entier non signé sur 32 bits, s’il s’agit de %i (le paramètre est un Card32, un Card16 ou un Card8)
+	-	un label de la forme “Lxxx”, s’il s’agit de %l (le paramètre est un Card8 * variant de code à code + text_size - 1)
+
