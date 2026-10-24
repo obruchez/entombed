@@ -3,13 +3,13 @@ package entombed.gfx
 /** Display of 32-pixel-wide blocks, with the behaviour of the original Atari routines
   * (`aff_bloc32x24_main` and its variants in `reference/atari/CHANGED3.L`).
   *
-  * Graphics and screens are stored as "chunky" 4 bpp in a byte array, as in the 1995 Smaky port:
-  * a block row is 16 bytes, a screen row 160 bytes, the high nibble is the left pixel.
+  * Graphics and screens are stored as "chunky" 4 bpp in a byte array, as in the 1995 Smaky port: a
+  * block row is 16 bytes, a screen row 160 bytes, the high nibble is the left pixel.
   *
   * Atari semantics, reproduced exactly:
   *   - the block is placed at pixel precision (the Smaky routines rounded to even coordinates);
-  *   - it is not drawn at all if `x + 31 < 0`, `x >= 320`, `y + h - 1 < 0` or `y >= 192`,
-  *     in which case the routine returns false;
+  *   - it is not drawn at all if `x + 31 < 0`, `x >= 320`, `y + h - 1 < 0` or `y >= 192`, in which
+  *     case the routine returns false;
   *   - otherwise the visible part, clipped to 320x192 (the information line below is never
   *     touched), is drawn and the routine returns true.
   */
@@ -29,8 +29,15 @@ object Blitter:
   val BytesPerBlockRow = 16
 
   /** Coordinates are 16-bit values as on the 68000 (`x` and `y` are sign-extended here). */
-  def draw(mem: Array[Byte], src: Int, height: Int, x0: Int, y0: Int, screen: Int,
-      mode: Int): Boolean =
+  def draw(
+      mem: Array[Byte],
+      src: Int,
+      height: Int,
+      x0: Int,
+      y0: Int,
+      screen: Int,
+      mode: Int
+  ): Boolean =
     val x = x0.toShort.toInt
     val y = y0.toShort.toInt
     val last = (y + height - 1).toShort.toInt

@@ -4,8 +4,8 @@ import entombed.audio.AudioEngine
 
 import scala.scalajs.js
 
-/** Web Audio output. The audio context can only start after a user gesture (autoplay policy),
-  * so sounds requested before are dropped.
+/** Web Audio output. The audio context can only start after a user gesture (autoplay policy), so
+  * sounds requested before are dropped.
   */
 final class WebAudio:
   private var context: js.Dynamic = null

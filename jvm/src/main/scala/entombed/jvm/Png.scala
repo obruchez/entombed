@@ -11,8 +11,11 @@ object Png:
   def image(frame: FrameBuffer, palette: Palette, scale: Int = 1): BufferedImage =
     val argb = new Array[Int](FrameBuffer.Width * FrameBuffer.Height)
     frame.toArgb(palette, argb)
-    val img = new BufferedImage(FrameBuffer.Width * scale, FrameBuffer.Height * scale,
-      BufferedImage.TYPE_INT_RGB)
+    val img = new BufferedImage(
+      FrameBuffer.Width * scale,
+      FrameBuffer.Height * scale,
+      BufferedImage.TYPE_INT_RGB
+    )
     for y <- 0 until FrameBuffer.Height * scale; x <- 0 until FrameBuffer.Width * scale do
       img.setRGB(x, y, argb((y / scale) * FrameBuffer.Width + x / scale))
     img

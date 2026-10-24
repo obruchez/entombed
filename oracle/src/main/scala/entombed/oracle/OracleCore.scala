@@ -1,5 +1,6 @@
 package entombed.oracle
 
+import entombed.audio.SoundSequence
 import entombed.core.{GameCore, Input}
 import entombed.gfx.{Blitter, FrameBuffer, Palette}
 import entombed.save.{ByteReader, ByteWriter, InMemoryStorage, Storage}
@@ -48,6 +49,10 @@ final class OracleCore(storage: Storage = new InMemoryStorage) extends GameCore:
   // Install the external routines, like CALLER.L did
   for (name, n) <- HookNames.zipWithIndex do cpu.wl(program.address(name), Memory.hookAddress(n))
 
+  private var presented = false
+  def presentedFrame: Boolean = presented
+  def peekWord(address: Int): Int = cpu.rw(address)
+
   def frame: FrameBuffer = currentFrame
   def palette: Palette = currentPalette
   def finished: Boolean = cpu.halted
@@ -60,17 +65,19 @@ final class OracleCore(storage: Storage = new InMemoryStorage) extends GameCore:
     if cpu.halted then return
     input = in
     keyPending = in.key & 0xff
+    presented = false
     cpu.run(MaxInstructionsPerStep)
     if !cpu.yieldRequested && !cpu.halted then
-      throw new CpuError(s"No vertical blank after $MaxInstructionsPerStep instructions " +
-        s"(line ${cpu.currentLine})")
+      throw new CpuError(
+        s"No vertical blank after $MaxInstructionsPerStep instructions " +
+          s"(line ${cpu.currentLine})"
+      )
 
-  /** The joystick as read by the game: after `sm_clr_joystick`, the keyboard processor only
-    * reports the joystick again when its state changes.
+  /** The joystick as read by the game: after `sm_clr_joystick`, the keyboard processor only reports
+    * the joystick again when its state changes.
     */
   private def joystick: Int =
-    if joystickCleared then
-      if input.joystick != joystickAtClear then joystickCleared = false
+    if joystickCleared then if input.joystick != joystickAtClear then joystickCleared = false
     if joystickCleared then 0 else input.joystick & 0xff
 
   private def poll(): Unit =
@@ -89,8 +96,8 @@ final class OracleCore(storage: Storage = new InMemoryStorage) extends GameCore:
   /** In: A0 block, D0.W height - 1, D1.W and D2.W screen coordinates. Out: D0.W visible. */
   private def blit(c: Cpu, mode: Int): Unit =
     val screen = c.rl(physscreen2Address) & 0xffffff
-    val visible = Blitter.draw(c.mem, c.a(0) & 0xffffff, (c.d(0) & 0xffff) + 1, c.d(1), c.d(2),
-      screen, mode)
+    val visible =
+      Blitter.draw(c.mem, c.a(0) & 0xffffff, (c.d(0) & 0xffff) + 1, c.d(1), c.d(2), screen, mode)
     c.d(0) = (c.d(0) & 0xffff0000) | (if visible then 1 else 0)
 
   private object hooks extends Hooks:
@@ -108,20 +115,21 @@ final class OracleCore(storage: Storage = new InMemoryStorage) extends GameCore:
       case ChangePal =>
         val base = c.a(0)
         currentPalette = new Palette(Array.tabulate(16)(i => c.rw(base + 2 * i)))
-      case WaitVbl => vbl()
-      case AffScreen => Blitter.present(c.mem, c.a(0) & 0xffffff, currentFrame)
+      case WaitVbl   => vbl()
+      case AffScreen =>
+        Blitter.present(c.mem, c.a(0) & 0xffffff, currentFrame)
+        presented = true
       case PlaySound =>
         // _sm_play_sound pushed A0 (the sequence address) before calling us
         val seq = c.rl(c.a(7) + 4)
-        sounds += soundSequence(c, seq)
-      case EndPrg => c.halted = true
-      case AffTransp => blit(c, Blitter.Transparent)
-      case AffNormal => blit(c, Blitter.Opaque)
-      case AffWhite  => blit(c, Blitter.White)
+        sounds += SoundSequence.read(c.mem, seq)
+      case EndPrg      => c.halted = true
+      case AffTransp   => blit(c, Blitter.Transparent)
+      case AffNormal   => blit(c, Blitter.Opaque)
+      case AffWhite    => blit(c, Blitter.White)
       case OpenForSave => saveBuffer = new java.io.ByteArrayOutputStream()
-      case Save =>
-        if saveBuffer != null then
-          saveBuffer.write(c.mem, c.a(0) & 0xffffff, c.d(0))
+      case Save        =>
+        if saveBuffer != null then saveBuffer.write(c.mem, c.a(0) & 0xffffff, c.d(0))
       case OpenForLoad =>
         loadData = storage.read(SaveSlot).orNull
         loadPos = 0
@@ -178,9 +186,22 @@ object OracleCore:
   val SaveSlot = "partie"
 
   val HookNames: Vector[String] = Vector(
-    "sm_get_joystick", "sm_clr_joystick", "sm_get_keyboard", "sm_change_pal", "sm_wait_vbl",
-    "sm_aff_screen", "sm_play_sound", "sm_end_prg", "sm_open_for_save", "sm_save",
-    "sm_open_for_load", "sm_load", "sm_close", "sm_aff_transp", "sm_aff_normal", "sm_aff_white"
+    "sm_get_joystick",
+    "sm_clr_joystick",
+    "sm_get_keyboard",
+    "sm_change_pal",
+    "sm_wait_vbl",
+    "sm_aff_screen",
+    "sm_play_sound",
+    "sm_end_prg",
+    "sm_open_for_save",
+    "sm_save",
+    "sm_open_for_load",
+    "sm_load",
+    "sm_close",
+    "sm_aff_transp",
+    "sm_aff_normal",
+    "sm_aff_white"
   )
   private inline val GetJoystick = 0
   private inline val ClrJoystick = 1
@@ -199,8 +220,8 @@ object OracleCore:
   private inline val AffNormal = 14
   private inline val AffWhite = 15
 
-  /** Corrections applied to the 1995 source before assembling it, each checked against the
-    * original line: (line number, expected original text, replacement).
+  /** Corrections applied to the 1995 source before assembling it, each checked against the original
+    * line: (line number, expected original text, replacement).
     */
   val Patches: Vector[(Int, String, String)] = Vector(
     // Keep the native block display routines installed by the host (Atari behaviour).
@@ -248,21 +269,3 @@ object OracleCore:
         "DATASD.BIN" -> EmbeddedSource.datasD
       )
     ).assemble()
-
-  /** Copies a `Dosound` sequence out of memory, up to its end marker (`$82 00`). */
-  def soundSequence(c: Cpu, address: Int): Array[Byte] =
-    val out = mutable.ArrayBuffer.empty[Byte]
-    var p = address
-    var done = false
-    while !done && out.length < 256 do
-      val op = c.rb(p)
-      out += op.toByte
-      p += 1
-      if op == 0x81 then
-        (0 until 3).foreach(_ => { out += c.rb(p).toByte; p += 1 })
-      else
-        val arg = c.rb(p)
-        out += arg.toByte
-        p += 1
-        if op >= 0x82 && arg == 0 then done = true
-    out.toArray

@@ -35,8 +35,10 @@ class OracleSuite extends munit.FunSuite:
     for _ <- 0 until 200 do core.step(Input(Input.Right, 0))
     val perTick = (core.cpu.executed - i0) / 200
     val ms = (System.nanoTime() - t0) / 1e6
-    println(s"oracle: $sounds title sounds, $perTick instructions per tick in the game, " +
-      f"${core.ticks} ticks in $ms%.0f ms")
+    println(
+      s"oracle: $sounds title sounds, $perTick instructions per tick in the game, " +
+        f"${core.ticks} ticks in $ms%.0f ms"
+    )
     assert(sounds > 0)
     assertEquals(core.word("tomb_number"), 0)
   }

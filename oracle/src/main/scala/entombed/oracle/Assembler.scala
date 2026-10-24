@@ -57,11 +57,59 @@ final class Program(
 
 object Op:
   val Names: Vector[String] = Vector(
-    "MOVE", "MOVEA", "MOVEM", "ADD", "ADDA", "ADDI", "ADDQ", "SUB", "SUBA", "SUBI", "SUBQ",
-    "CMP", "CMPA", "CMPI", "AND", "ANDI", "OR", "ORI", "EOR", "EORI", "CLR", "TST", "NEG",
-    "EXT", "SWAP", "ASL", "ASR", "LSL", "LSR", "ROL", "ROR", "MULU", "MULS", "DIVU", "DIVS",
-    "ABCD", "BTST", "BSET", "BCLR", "DBRA", "BRA", "BSR", "BEQ", "BNE", "BCS", "BCC", "BMI",
-    "BPL", "JSR", "JMP", "RTS", "LEA", "NOP"
+    "MOVE",
+    "MOVEA",
+    "MOVEM",
+    "ADD",
+    "ADDA",
+    "ADDI",
+    "ADDQ",
+    "SUB",
+    "SUBA",
+    "SUBI",
+    "SUBQ",
+    "CMP",
+    "CMPA",
+    "CMPI",
+    "AND",
+    "ANDI",
+    "OR",
+    "ORI",
+    "EOR",
+    "EORI",
+    "CLR",
+    "TST",
+    "NEG",
+    "EXT",
+    "SWAP",
+    "ASL",
+    "ASR",
+    "LSL",
+    "LSR",
+    "ROL",
+    "ROR",
+    "MULU",
+    "MULS",
+    "DIVU",
+    "DIVS",
+    "ABCD",
+    "BTST",
+    "BSET",
+    "BCLR",
+    "DBRA",
+    "BRA",
+    "BSR",
+    "BEQ",
+    "BNE",
+    "BCS",
+    "BCC",
+    "BMI",
+    "BPL",
+    "JSR",
+    "JMP",
+    "RTS",
+    "LEA",
+    "NOP"
   )
   private val byName: Map[String, Int] = Names.zipWithIndex.toMap
   def apply(name: String): Int = byName(name)
@@ -85,9 +133,9 @@ object Op:
 
   val Branches: Set[Int] = Set(BRA, BSR, BEQ, BNE, BCS, BCC, BMI, BPL)
 
-/** Memory map used by the interpreter. Code is not stored in memory: each instruction gets a
-  * pseudo address in a separate region so that return addresses and routine pointers (`dc.l
-  * do_radeau`, `move.l #aff_bloc32x24_main,...`) work as on the real machine.
+/** Memory map used by the interpreter. Code is not stored in memory: each instruction gets a pseudo
+  * address in a separate region so that return addresses and routine pointers (`dc.l do_radeau`,
+  * `move.l #aff_bloc32x24_main,...`) work as on the real machine.
   */
 object Memory:
   val Size = 0x80000
@@ -111,7 +159,8 @@ object Memory:
   * labels (`\name`, scoped to the previous global label), expressions with `+ - * /` and
   * parentheses, `$hex`, `%binary`, decimal and `"c"` character constants.
   *
-  * @param files contents of the files included with `ibytes`, keyed by upper-case base name
+  * @param files
+  *   contents of the files included with `ibytes`, keyed by upper-case base name
   */
 final class Assembler(source: String, files: Map[String, Array[Byte]]):
   import Assembler.*
@@ -168,19 +217,18 @@ final class Assembler(source: String, files: Map[String, Array[Byte]]):
         val mnU = mn.toUpperCase
         // A label alone on a line which is a section keyword
         val (labelName, mnemonic, operands) =
-          if label != null && mn.isEmpty && Set("TEXT", "DATA", "BSS", "END")(label.toUpperCase) then
-            (null, label.toUpperCase, "")
+          if label != null && mn.isEmpty && Set("TEXT", "DATA", "BSS", "END")(label.toUpperCase)
+          then (null, label.toUpperCase, "")
           else (label, mnU, ops)
         val stmt = Stmt(lineNo, mnemonic, operands, raw.trim)
-        if mnemonic == "EQU" then
-          equs(labelName.toLowerCase) = (operands, scope)
+        if mnemonic == "EQU" then equs(labelName.toLowerCase) = (operands, scope)
         else
           if labelName != null then
             // A global label opens a new scope for the local (\name) labels that follow it
             if !labelName.startsWith("\\") then scope = labelName.toLowerCase
             pending += qualify(labelName, scope)
           mnemonic match
-            case "" => ()
+            case ""                      => ()
             case "TEXT" | "DATA" | "BSS" =>
               bindPending(n =>
                 section match
@@ -192,7 +240,7 @@ final class Assembler(source: String, files: Map[String, Array[Byte]]):
                 case "TEXT" => Text
                 case "DATA" => Data
                 case _      => Bss
-            case "END" => ended = true
+            case "END"                      => ended = true
             case m if m.startsWith("ALIGN") =>
               section match
                 case Text => textData = (textData + 1) & ~1
@@ -229,7 +277,7 @@ final class Assembler(source: String, files: Map[String, Array[Byte]]):
     def resolveEqu(name: String, depth: Int): Int =
       symbols.get(name) match
         case Some(v) => v
-        case None =>
+        case None    =>
           if depth > 50 then throw AsmError(s"Recursive equate $name")
           val (expr, sc) = equs.getOrElse(name, throw AsmError(s"Unknown symbol $name"))
           val v = evaluate(expr, sc, n => resolveEqu(n, depth + 1))
@@ -301,17 +349,17 @@ final class Assembler(source: String, files: Map[String, Array[Byte]]):
       case _   => 0
     // Normalisations done by the original assembler
     name match
-      case "MOVE" if dst.kind == Operand.AReg => name = "MOVEA"
-      case "ADD" if dst.kind == Operand.AReg  => name = "ADDA"
-      case "SUB" if dst.kind == Operand.AReg  => name = "SUBA"
-      case "CMP" if dst.kind == Operand.AReg  => name = "CMPA"
+      case "MOVE" if dst.kind == Operand.AReg                           => name = "MOVEA"
+      case "ADD" if dst.kind == Operand.AReg                            => name = "ADDA"
+      case "SUB" if dst.kind == Operand.AReg                            => name = "SUBA"
+      case "CMP" if dst.kind == Operand.AReg                            => name = "CMPA"
       case "ADD" if src.kind == Operand.Imm && dst.kind != Operand.AReg => name = "ADDI"
       case "SUB" if src.kind == Operand.Imm && dst.kind != Operand.AReg => name = "SUBI"
-      case "CMP" if src.kind == Operand.Imm => name = "CMPI"
-      case "AND" if src.kind == Operand.Imm => name = "ANDI"
-      case "OR" if src.kind == Operand.Imm  => name = "ORI"
-      case "EOR" if src.kind == Operand.Imm => name = "EORI"
-      case _ => ()
+      case "CMP" if src.kind == Operand.Imm                             => name = "CMPI"
+      case "AND" if src.kind == Operand.Imm                             => name = "ANDI"
+      case "OR" if src.kind == Operand.Imm                              => name = "ORI"
+      case "EOR" if src.kind == Operand.Imm                             => name = "EORI"
+      case _                                                            => ()
     if name == "ADDI" && dst.kind == Operand.AReg then name = "ADDA"
     if name == "SUBI" && dst.kind == Operand.AReg then name = "SUBA"
     val op = Op(name)
@@ -319,9 +367,9 @@ final class Assembler(source: String, files: Map[String, Array[Byte]]):
       size = name match
         case "MULU" | "MULS" | "DIVU" | "DIVS" | "SWAP" | "EXT" => 2
         case "BTST" | "BSET" | "BCLR" => if dst.kind == Operand.DReg then 4 else 1
-        case "LEA" | "JSR" | "JMP" => 4
-        case "ABCD" => 1
-        case _ => 2
+        case "LEA" | "JSR" | "JMP"    => 4
+        case "ABCD"                   => 1
+        case _                        => 2
     var target = -1
     var source = src
     if Op.Branches(op) || op == Op.DBRA then
@@ -330,8 +378,15 @@ final class Assembler(source: String, files: Map[String, Array[Byte]]):
       if !Memory.isCode(address) then throw AsmError(s"Branch to non-code $labelText")
       target = Memory.codeIndex(address)
       if op != Op.DBRA then source = Operand.None
-    new Instruction(op, size, source, if op == Op.DBRA then Operand.None else dst, target, s.line,
-      s.text)
+    new Instruction(
+      op,
+      size,
+      source,
+      if op == Op.DBRA then Operand.None else dst,
+      target,
+      s.line,
+      s.text
+    )
 
   private val RegRe = "(?i)(d[0-7]|a[0-7]|sp)".r
   private val IndRe = "(?i)\\((a[0-7]|sp)\\)".r
@@ -349,21 +404,26 @@ final class Assembler(source: String, files: Map[String, Array[Byte]]):
     def ev(e: String): Int = evaluate(e, scope, n => symbol(n, scope))
     t match
       case _ if t.startsWith("#") => new Operand(Operand.Imm, value = ev(t.substring(1)))
-      case RegRe(r) =>
+      case RegRe(r)               =>
         val n = regNum(r)
         if mnemonic == "MOVEM" then new Operand(Operand.RegList, value = 1 << n)
         else if n < 8 then new Operand(Operand.DReg, n)
         else new Operand(Operand.AReg, n - 8)
       case _ if mnemonic == "MOVEM" && isRegList(t) =>
         new Operand(Operand.RegList, value = regListMask(t))
-      case PostRe(r) => new Operand(Operand.PostInc, regNum(r) - 8)
-      case PreRe(r)  => new Operand(Operand.PreDec, regNum(r) - 8)
-      case IndRe(r)  => new Operand(Operand.Ind, regNum(r) - 8)
+      case PostRe(r)            => new Operand(Operand.PostInc, regNum(r) - 8)
+      case PreRe(r)             => new Operand(Operand.PreDec, regNum(r) - 8)
+      case IndRe(r)             => new Operand(Operand.Ind, regNum(r) - 8)
       case IndexRe(d, a, x, sz) =>
-        new Operand(Operand.Index, regNum(a) - 8, if d.trim.isEmpty then 0 else ev(d), regNum(x),
-          sz != null && sz.equalsIgnoreCase(".l"))
+        new Operand(
+          Operand.Index,
+          regNum(a) - 8,
+          if d.trim.isEmpty then 0 else ev(d),
+          regNum(x),
+          sz != null && sz.equalsIgnoreCase(".l")
+        )
       case DispRe(d, a) if d.trim.nonEmpty => new Operand(Operand.Disp, regNum(a) - 8, ev(d))
-      case _ => new Operand(Operand.Abs, value = ev(t))
+      case _                               => new Operand(Operand.Abs, value = ev(t))
 
   private def isRegList(t: String): Boolean =
     t.split("/").forall(p => p.trim.matches("(?i)(d[0-7]|a[0-7]|sp)(-(d[0-7]|a[0-7]|sp))?"))

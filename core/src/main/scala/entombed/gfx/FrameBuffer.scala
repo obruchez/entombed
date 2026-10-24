@@ -61,4 +61,8 @@ object Palette:
 
   /** Reads 16 big-endian words. */
   def read(bytes: Array[Byte], offset: Int): Palette =
-    new Palette(Array.tabulate(16)(i => ((bytes(offset + 2 * i) & 0xff) << 8) | (bytes(offset + 2 * i + 1) & 0xff)))
+    new Palette(
+      Array.tabulate(16)(i =>
+        ((bytes(offset + 2 * i) & 0xff) << 8) | (bytes(offset + 2 * i + 1) & 0xff)
+      )
+    )

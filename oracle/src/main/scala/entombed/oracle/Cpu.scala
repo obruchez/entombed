@@ -10,8 +10,8 @@ final class CpuError(message: String) extends Exception(message)
 
 /** Interpreter for the subset of the 68000 instruction set used by Entombed.
   *
-  * Condition codes N, Z, C, X are maintained exactly; V is computed for the arithmetic
-  * instructions but never tested by the game.
+  * Condition codes N, Z, C, X are maintained exactly; V is computed for the arithmetic instructions
+  * but never tested by the game.
   */
 final class Cpu(val program: Program, hooks: Hooks):
   val mem: Array[Byte] = program.memory.clone()
@@ -33,8 +33,7 @@ final class Cpu(val program: Program, hooks: Hooks):
 
   private inline def check(addr: Int): Int =
     val ad = addr & 0xffffff
-    if ad >= Memory.Size then
-      throw new CpuError(f"Bad address $addr%08x at ${code(pc - 1)}")
+    if ad >= Memory.Size then throw new CpuError(f"Bad address $addr%08x at ${code(pc - 1)}")
     ad
 
   def rb(addr: Int): Int = mem(check(addr)) & 0xff
@@ -127,7 +126,7 @@ final class Cpu(val program: Program, hooks: Hooks):
 
   /** Address of a memory operand, applying (An)+ and -(An) side effects. */
   private def ea(o: Operand, size: Int): Int = o.kind match
-    case Ind => a(o.reg)
+    case Ind     => a(o.reg)
     case PostInc =>
       val ad = a(o.reg)
       a(o.reg) += incr(o.reg, size)
@@ -173,8 +172,7 @@ final class Cpu(val program: Program, hooks: Hooks):
     else readMem(addr, size)
 
   private inline def writeAt(o: Operand, addr: Int, size: Int, v: Int): Unit =
-    if addr == -1 then
-      if o.kind == DReg then writeD(o.reg, size, v) else a(o.reg) = v
+    if addr == -1 then if o.kind == DReg then writeD(o.reg, size, v) else a(o.reg) = v
     else writeMem(addr, size, v)
 
   private def reg(r: Int): Int = if r < 8 then d(r) else a(r - 8)
@@ -216,8 +214,7 @@ final class Cpu(val program: Program, hooks: Hooks):
       val v = read(src, size)
       write(dst, size, v)
       logicFlags(v, size)
-    else if op == Op.MOVEA then
-      a(dst.reg) = sext(read(src, size), size)
+    else if op == Op.MOVEA then a(dst.reg) = sext(read(src, size), size)
     else if op == Op.ADD || op == Op.ADDI || (op == Op.ADDQ && dst.kind != AReg) then
       val s = read(src, size)
       val addr = rmwAddress(dst, size)
@@ -259,8 +256,7 @@ final class Cpu(val program: Program, hooks: Hooks):
     else if op == Op.CLR then
       write(src, size, 0)
       fn = false; fz = true; fv = false; fc = false
-    else if op == Op.TST then
-      logicFlags(read(src, size), size)
+    else if op == Op.TST then logicFlags(read(src, size), size)
     else if op == Op.NEG then
       val addr = rmwAddress(src, size)
       val dv = readAt(src, addr, size)

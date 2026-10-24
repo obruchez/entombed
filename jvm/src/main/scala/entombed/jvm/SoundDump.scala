@@ -6,8 +6,8 @@ import entombed.data.Assets
 import java.io.{ByteArrayInputStream, File}
 import javax.sound.sampled.{AudioFileFormat, AudioFormat, AudioInputStream, AudioSystem}
 
-/** Writes the 20 sounds of the game as WAV files (and the "tomb completed" tune), and prints
-  * their duration and an estimate of their pitch.
+/** Writes the 20 sounds of the game as WAV files (and the "tomb completed" tune), and prints their
+  * duration and an estimate of their pitch.
   */
 object SoundDump:
   val SampleRate = 44100

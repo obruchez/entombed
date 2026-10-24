@@ -81,7 +81,22 @@ lazy val js = project
     libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.1"
   )
 
+lazy val site = taskKey[Unit]("Builds the optimised browser version into docs/ (GitHub Pages)")
+
 lazy val root = project
   .in(file("."))
   .aggregate(core.jvm, core.js, oracle.jvm, oracle.js, jvm, js)
-  .settings(publish / skip := true)
+  .settings(
+    publish / skip := true,
+    site := {
+      val _ = (js / Compile / fullLinkJS).value
+      val out = (js / Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value
+      val docs = baseDirectory.value / "docs"
+      IO.copyFile(out / "main.js", docs / "main.js")
+      val html = IO
+        .read(baseDirectory.value / "js" / "index.html")
+        .replace("target/scala-3.9.0/entombed-js-fastopt/main.js", "main.js")
+      IO.write(docs / "index.html", html)
+      streams.value.log.info(s"Browser version written to $docs")
+    }
+  )

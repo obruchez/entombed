@@ -21,5 +21,12 @@ final class FileStorage(dir: Path = Paths.get(System.getProperty("user.home"), "
   def list(): Seq[String] =
     if !Files.isDirectory(dir) then Seq.empty
     else
-      Files.list(dir).iterator.asScala.map(_.getFileName.toString)
-        .filter(_.endsWith(".sav")).map(_.stripSuffix(".sav")).toSeq.sorted
+      Files
+        .list(dir)
+        .iterator
+        .asScala
+        .map(_.getFileName.toString)
+        .filter(_.endsWith(".sav"))
+        .map(_.stripSuffix(".sav"))
+        .toSeq
+        .sorted

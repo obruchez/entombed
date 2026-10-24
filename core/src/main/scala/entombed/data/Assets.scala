@@ -2,8 +2,8 @@ package entombed.data
 
 import entombed.gfx.{Bitplanes, Palette}
 
-/** A sound of the game: an XBIOS `Dosound` sequence with the priority and the minimum duration
-  * (in game frames) used by the game to decide whether another sound may interrupt it.
+/** A sound of the game: an XBIOS `Dosound` sequence with the priority and the minimum duration (in
+  * game frames) used by the game to decide whether another sound may interrupt it.
   */
 final case class Sound(priority: Int, pause: Int, sequence: Array[Byte])
 
@@ -11,16 +11,16 @@ final case class Sound(priority: Int, pause: Int, sequence: Array[Byte])
   *
   * Layout, from the 1995 study notes (`reference/notes-1995/ENTOMBED-notes.md`):
   *
-  * | Offset | Content |
-  * |---|---|
-  * | 14 | 4 palettes of 16 colours |
-  * | 1492 | 17 sounds of 42 bytes (priority, pause, `Dosound` sequence), then sounds 17-19 |
-  * | 2296-5196 | texts (end of game, best scores, instructions, tomb selection) |
-  * | 4768 | addresses of the 5 tombs (relative to the start of the program) |
-  * | 5196-31348 | tomb descriptions and tomb data |
-  * | 31412 | 113 blocks of 32x16 (background) |
-  * | 60340 | other graphics (32 pixels wide, addressed by byte offset from here) |
-  * | 92980 | font: 100 characters of 8x8 |
+  * | Offset     | Content                                                                        |
+  * |:-----------|:-------------------------------------------------------------------------------|
+  * | 14         | 4 palettes of 16 colours                                                       |
+  * | 1492       | 17 sounds of 42 bytes (priority, pause, `Dosound` sequence), then sounds 17-19 |
+  * | 2296-5196  | texts (end of game, best scores, instructions, tomb selection)                 |
+  * | 4768       | addresses of the 5 tombs (relative to the start of the program)                |
+  * | 5196-31348 | tomb descriptions and tomb data                                                |
+  * | 31412      | 113 blocks of 32x16 (background)                                               |
+  * | 60340      | other graphics (32 pixels wide, addressed by byte offset from here)            |
+  * | 92980      | font: 100 characters of 8x8                                                    |
   */
 final class Assets(val bytes: Array[Byte]):
   require(bytes.length == Assets.Size, s"DATAS.BIN must be ${Assets.Size} bytes")
@@ -44,13 +44,19 @@ final class Assets(val bytes: Array[Byte]):
 
   /** Pixels of the background blocks and of the other graphics, as rows of 32 pixels. */
   val blockRows: Array[Byte] =
-    Bitplanes.decode(bytes, Assets.Blocks32x16Offset, 2, (Assets.FontOffset - Assets.Blocks32x16Offset) / 16)
+    Bitplanes.decode(
+      bytes,
+      Assets.Blocks32x16Offset,
+      2,
+      (Assets.FontOffset - Assets.Blocks32x16Offset) / 16
+    )
 
   /** Index of the first row of background block `n` (0-112) in [[blockRows]]. */
   def blockRow(n: Int): Int = n * 16
 
   /** Index in [[blockRows]] of the graphics at `byteOffset` from the "other graphics" pointer. */
-  def otherRow(byteOffset: Int): Int = (Assets.OthersOffset - Assets.Blocks32x16Offset + byteOffset) / 16
+  def otherRow(byteOffset: Int): Int =
+    (Assets.OthersOffset - Assets.Blocks32x16Offset + byteOffset) / 16
 
   /** The 100 characters of the font (8x8 pixels each), after the masking done by `font_init`. */
   val font: Array[Array[Byte]] =

@@ -3,8 +3,8 @@ package entombed.gfx
 /** Conversions between the Atari ST low-resolution formats and pixel indices.
   *
   *   - Interleaved bitplanes: each group of 16 pixels is stored as 4 big-endian words, one per
-  *     plane (plane 0 is the least significant bit of the colour index). A 32-pixel-wide block
-  *     row is 16 bytes (2 groups).
+  *     plane (plane 0 is the least significant bit of the colour index). A 32-pixel-wide block row
+  *     is 16 bytes (2 groups).
   *   - "Chunky" 4 bpp, as used by the 1995 Smaky port: 2 pixels per byte, high nibble first.
   */
 object Bitplanes:
@@ -36,7 +36,9 @@ object Bitplanes:
 
   /** Converts pixel indices to chunky 4 bpp (2 pixels per byte, high nibble first). */
   def toChunky(pixels: Array[Byte]): Array[Byte] =
-    Array.tabulate(pixels.length / 2)(i => ((pixels(2 * i) << 4) | (pixels(2 * i + 1) & 0xf)).toByte)
+    Array.tabulate(pixels.length / 2)(i =>
+      ((pixels(2 * i) << 4) | (pixels(2 * i + 1) & 0xf)).toByte
+    )
 
   /** Converts chunky 4 bpp bytes to pixel indices. */
   def fromChunky(bytes: Array[Byte], offset: Int, length: Int): Array[Byte] =
