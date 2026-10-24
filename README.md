@@ -56,6 +56,24 @@ sbt jvm/run           # desktop version (add --oracle to start with the original
 sbt js/fastLinkJS     # browser version, then open js/index.html
 ```
 
+## Docker
+
+The browser version is also published as a Docker image, `obruchez/entombed` (static files
+served by an unprivileged nginx on port 8080, `/healthz` for health checks):
+
+```sh
+docker run -d --name entombed -p 8080:8080 obruchez/entombed
+```
+
+The page only uses relative URLs, so a reverse proxy may serve it under a path such as
+`/entombed/`. To build and publish a new version (`ThisBuild / version` in `build.sbt`):
+
+```sh
+sbt site
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t obruchez/entombed:<version> -t obruchez/entombed:latest --push .
+```
+
 ## How the port was made
 
 The port has two implementations of the game, which must behave identically:

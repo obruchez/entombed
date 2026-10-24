@@ -1,7 +1,7 @@
 import org.scalajs.linker.interface.ModuleKind
 
 ThisBuild / scalaVersion := "3.9.0"
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "1.0.0"
 ThisBuild / organization := "org.bruchez.olivier"
 ThisBuild / scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Wunused:all")
 
