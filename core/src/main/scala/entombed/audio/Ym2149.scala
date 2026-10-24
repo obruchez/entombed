@@ -51,6 +51,9 @@ final class Ym2149(sampleRate: Int, clockRate: Double = 2_000_000.0):
 
   private val registers = new Array[Int](16)
 
+  /** Optional observer of register writes (tests, debugging). */
+  var onWrite: (Int, Int) => Unit = null
+
   // ----- ayumi API -----
 
   def setTone(index: Int, period: Int): Unit =
@@ -83,6 +86,7 @@ final class Ym2149(sampleRate: Int, clockRate: Double = 2_000_000.0):
   /** Writes one of the 14 sound registers (0-13), with the same effect as on the real chip. */
   def writeRegister(r: Int, value: Int): Unit =
     val v = value & 0xff
+    if onWrite != null then onWrite(r, v)
     if r >= 0 && r < 16 then registers(r) = v
     r match
       case 0 | 1 => setTone(0, registers(0) | ((registers(1) & 0xf) << 8))
@@ -148,7 +152,7 @@ final class Ym2149(sampleRate: Int, clockRate: Double = 2_000_000.0):
       out *= (if eOn(i) then e else volume(i) * 2 + 1)
       sum += YmDacTable(out)
       i += 1
-    mixed = sum / 2 // headroom for two loud channels; hosts clamp the rare overflow
+    mixed = sum / ToneChannels
 
   /** Computes the next output sample into `output`. */
   def process(): Unit =

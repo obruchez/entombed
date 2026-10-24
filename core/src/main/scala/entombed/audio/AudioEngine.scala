@@ -9,7 +9,7 @@ package entombed.audio
   *
   * Not thread-safe: hosts that render on a separate thread must hand requests over themselves.
   */
-final class AudioEngine(val sampleRate: Int, val volume: Double = 0.8):
+final class AudioEngine(val sampleRate: Int, val volume: Double = 0.9):
   val ym = new Ym2149(sampleRate)
   private val dosound = new Dosound(ym)
   private var pending: Array[Byte] = null

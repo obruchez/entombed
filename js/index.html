@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entombed</title>
+<style>
+  :root { --bg: #0b0906; --fg: #d8c49a; --dim: #8a7a5a; --accent: #e0b050; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  canvas { display: block; width: 100%; aspect-ratio: 8 / 5; background: #000;
+    image-rendering: pixelated; image-rendering: crisp-edges; outline: none; }
+  h1 { font-size: 18px; letter-spacing: .3em; color: var(--accent); margin: 0 0 12px; }
+  .keys { display: grid; grid-template-columns: max-content 1fr; gap: 2px 16px; margin-top: 16px; }
+  .keys b { color: var(--accent); font-weight: normal; }
+  p { color: var(--dim); }
+  a { color: var(--fg); }
+</style>
+</head>
+<body>
+<main>
+  <h1>ENTOMBED</h1>
+  <canvas id="screen" width="960" height="600" tabindex="0"></canvas>
+  <div class="keys">
+    <b>Arrows</b><span>walk, jump (up), climb ladders</span>
+    <b>Space / Ctrl</b><span>fire (start, select a tomb, shoot arrows)</span>
+    <b>P</b><span>pause, any key to resume</span>
+    <b>1 to 9, 0</b><span>use 1 to 10 seconds of hourglass time</span>
+    <b>S / L</b><span>save / load the game (added in 1995 for the Smaky)</span>
+  </div>
+  <p>Entombed © 1991 Nick Concannon (freeware). Sound starts after the first key press.
+    Running the original 68000 code as commented in 1995 by Olivier and Erik Bruchez.</p>
+</main>
+<script src="target/scala-3.9.0/entombed-js-fastopt/main.js"></script>
+</body>
+</html>
