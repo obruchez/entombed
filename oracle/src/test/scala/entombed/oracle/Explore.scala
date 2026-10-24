@@ -8,6 +8,29 @@ import scala.collection.mutable
   * `oracleJVM/Test/runMain entombed.oracle.Explore <firstSeed> <seeds> <ticks>`).
   */
 object Explore:
+  private val RecordSizes =
+    Map(
+      0 -> 0x1e,
+      1 -> 0x18,
+      2 -> 0x1e,
+      3 -> 0x26,
+      4 -> 0x22,
+      5 -> 0x24,
+      6 -> 0x28,
+      7 -> 0x26,
+      8 -> 0x1a
+    )
+
+  /** Addresses of the object records of the current tomb. */
+  def records(m: entombed.game.Ram): Seq[Int] =
+    val out = Seq.newBuilder[Int]
+    var a = Vars.B205312
+    val end = m.ptr(Vars.D542)
+    while a < end && RecordSizes.contains(m.l(a + 6) - Vars.Raft) do
+      out += a
+      a += RecordSizes(m.l(a + 6) - Vars.Raft)
+    out.result()
+
   def main(args: Array[String]): Unit =
     val first = args.lift(0).map(_.toInt).getOrElse(1)
     val count = args.lift(1).map(_.toInt).getOrElse(10)
@@ -56,8 +79,16 @@ object Explore:
           if rnd.nextInt(4) == 0 then write(Vars.NbLifes, 2, 7)
           if rnd.nextInt(3) == 0 then
             // Teleport, as the spheres do
-            val x = rnd.nextInt(m.w(Vars.TombWord2) + 0x120) & ~1
-            val y = rnd.nextInt(m.w(Vars.TombWord3) + 0x90) & ~3
+            val dragons = records(m).filter(a => m.l(a + 6) == Vars.Dragon)
+            val (x, y) =
+              if args.contains("dragons") && dragons.nonEmpty then
+                val d = dragons(rnd.nextInt(dragons.size))
+                ((m.w(d + 0xe) + rnd.nextInt(160) - 80) & ~1, m.w(d + 0x10) & ~3)
+              else
+                (
+                  rnd.nextInt(m.w(Vars.TombWord2) + 0x120) & ~1,
+                  rnd.nextInt(m.w(Vars.TombWord3) + 0x90) & ~3
+                )
             write(Vars.TombWord0, 2, x)
             write(Vars.TombWord1, 2, y)
             val px = port.clampScroll(x, 0x90, m.w(Vars.TombWord2))

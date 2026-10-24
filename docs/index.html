@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entombed</title>
+<style>
+  :root { --bg: #0b0906; --panel: #17130d; --fg: #d8c49a; --dim: #8a7a5a; --accent: #e0b050; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap; margin-bottom: 12px; }
+  h1 { font-size: 18px; letter-spacing: .3em; color: var(--accent); margin: 0; }
+  #status { color: var(--accent); min-height: 1.5em; }
+  canvas { display: block; width: 100%; aspect-ratio: 8 / 5; background: #000;
+    image-rendering: pixelated; image-rendering: crisp-edges; outline: none; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  button { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid #3a3020;
+    border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  .keys { display: grid; grid-template-columns: max-content 1fr; gap: 2px 16px; }
+  .keys b { color: var(--accent); font-weight: normal; }
+  p { color: var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ENTOMBED</h1>
+    <span id="status"></span>
+  </header>
+  <canvas id="screen" width="960" height="600" tabindex="0"></canvas>
+  <div class="bar">
+    <button id="save" title="F6">Save</button>
+    <button id="load" title="F7">Load</button>
+    <button id="god" title="F8">God mode</button>
+    <button id="tomb5" title="F4">Unlock tomb 5</button>
+    <button id="speed" title="F2">Speed: Atari ST / fast</button>
+    <button id="engine">Switch: Scala port / original code</button>
+  </div>
+  <div class="keys">
+    <b>Arrows</b><span>walk, jump (up), climb ladders</span>
+    <b>Space / Ctrl</b><span>fire: start, select a tomb, shoot arrows</span>
+    <b>P</b><span>pause, any key to resume</span>
+    <b>1 to 9, 0</b><span>use 1 to 10 seconds of hourglass time</span>
+    <b>S / L</b><span>the save game added in 1995 for the Smaky (during play only)</span>
+    <b>F6 / F7</b><span>save / load at any moment</span>
+  </div>
+  <p>Entombed © 1991 Nick Concannon (freeware). Scala 3 port of the 68000 code disassembled and
+    commented in 1995 by Olivier and Erik Bruchez. Sound starts after the first key press.</p>
+</main>
+<script src="main.js"></script>
+</body>
+</html>
