@@ -1,7 +1,7 @@
 package entombed.oracle
 
 import entombed.core.{GameCore, Input}
-import entombed.gfx.{FrameBuffer, Palette}
+import entombed.gfx.{Blitter, FrameBuffer, Palette}
 import entombed.save.{ByteReader, ByteWriter, InMemoryStorage, Storage}
 
 import scala.collection.mutable
@@ -10,15 +10,17 @@ import scala.collection.mutable
   * 1995 for the Smaky port (`reference/smaky/STOMBED1.L`), with the Smaky data files.
   *
   * The 1995 source reaches the machine only through a table of external routines (`sm_*`), which
-  * are implemented here in Scala, exactly as `CALLER.L` did on TOS:
+  * are implemented here in Scala, as `CALLER.L` did on TOS:
   *
   *   - `sm_wait_vbl` ends the current `step`,
   *   - `sm_aff_screen` converts the "chunky" 4 bpp screen into the frame buffer,
   *   - `sm_play_sound` hands the `Dosound` sequence over to the host,
+  *   - `sm_aff_transp/normal/white` display blocks with the exact behaviour of the Atari routines
+  *     (the 68000 fallbacks of the Smaky version rounded coordinates to even values),
   *   - the save routines (keys S and L during the game) use the host storage.
   *
-  * The block display routines are the portable 68000 fallbacks included in the source, as on the
-  * Smaky.
+  * A few lines of the source are patched (see [[OracleCore.Patches]]) so that the oracle behaves
+  * and looks like the original Atari game.
   */
 final class OracleCore(storage: Storage = new InMemoryStorage) extends GameCore:
   import OracleCore.*
@@ -82,6 +84,15 @@ final class OracleCore(storage: Storage = new InMemoryStorage) extends GameCore:
     ticks += 1
     cpu.yieldRequested = true
 
+  private val physscreen2Address = program.address("physscreen2")
+
+  /** In: A0 block, D0.W height - 1, D1.W and D2.W screen coordinates. Out: D0.W visible. */
+  private def blit(c: Cpu, mode: Int): Unit =
+    val screen = c.rl(physscreen2Address) & 0xffffff
+    val visible = Blitter.draw(c.mem, c.a(0) & 0xffffff, (c.d(0) & 0xffff) + 1, c.d(1), c.d(2),
+      screen, mode)
+    c.d(0) = (c.d(0) & 0xffff0000) | (if visible then 1 else 0)
+
   private object hooks extends Hooks:
     def call(c: Cpu, n: Int): Unit = n match
       case GetJoystick =>
@@ -98,20 +109,15 @@ final class OracleCore(storage: Storage = new InMemoryStorage) extends GameCore:
         val base = c.a(0)
         currentPalette = new Palette(Array.tabulate(16)(i => c.rw(base + 2 * i)))
       case WaitVbl => vbl()
-      case AffScreen =>
-        val base = c.a(0)
-        val px = currentFrame.pixels
-        var i = 0
-        while i < 32000 do
-          val b = c.mem(base + i)
-          px(2 * i) = ((b >> 4) & 0xf).toByte
-          px(2 * i + 1) = (b & 0xf).toByte
-          i += 1
+      case AffScreen => Blitter.present(c.mem, c.a(0) & 0xffffff, currentFrame)
       case PlaySound =>
         // _sm_play_sound pushed A0 (the sequence address) before calling us
         val seq = c.rl(c.a(7) + 4)
         sounds += soundSequence(c, seq)
       case EndPrg => c.halted = true
+      case AffTransp => blit(c, Blitter.Transparent)
+      case AffNormal => blit(c, Blitter.Opaque)
+      case AffWhite  => blit(c, Blitter.White)
       case OpenForSave => saveBuffer = new java.io.ByteArrayOutputStream()
       case Save =>
         if saveBuffer != null then
@@ -174,7 +180,7 @@ object OracleCore:
   val HookNames: Vector[String] = Vector(
     "sm_get_joystick", "sm_clr_joystick", "sm_get_keyboard", "sm_change_pal", "sm_wait_vbl",
     "sm_aff_screen", "sm_play_sound", "sm_end_prg", "sm_open_for_save", "sm_save",
-    "sm_open_for_load", "sm_load", "sm_close"
+    "sm_open_for_load", "sm_load", "sm_close", "sm_aff_transp", "sm_aff_normal", "sm_aff_white"
   )
   private inline val GetJoystick = 0
   private inline val ClrJoystick = 1
@@ -189,13 +195,35 @@ object OracleCore:
   private inline val OpenForLoad = 10
   private inline val Load = 11
   private inline val Close = 12
+  private inline val AffTransp = 13
+  private inline val AffNormal = 14
+  private inline val AffWhite = 15
 
   /** Corrections applied to the 1995 source before assembling it, each checked against the
     * original line: (line number, expected original text, replacement).
     */
   val Patches: Vector[(Int, String, String)] = Vector(
+    // Keep the native block display routines installed by the host (Atari behaviour).
+    (144, "move.l #aff_bloc32x24_main,sm_aff_transp", " ; (patched: native display routines)"),
+    (145, "move.l #aff_bloc32x24_main_fast,sm_aff_normal", " ;"),
+    (146, "move.l #aff_white_bloc,sm_aff_white", " ;"),
     // Debugging leftover of 1995: without this branch, tomb selection always offers tomb 5.
     (598, ";BNE L0009C", " BNE L0009C ; (restored, as in the Atari version)"),
+    // Tombs already completed are greyed out with a pattern of 4-pixel stripes on the Atari
+    // (ANDI.L on bitplanes); the same pattern for the chunky screen.
+    (668, "L000B2:ANDI.L #$F0F0F0F0,$A0(A0)", "L000B2:ANDI.L #$FFFF0000,$A0(A0) ; (patched)"),
+    (669, "ANDI.L #$0F0F0F0F,(A0)+", " ANDI.L #$0000FFFF,(A0)+ ; (patched)"),
+    // The original copyright line, at its original position
+    (1000, "MOVE.W #$B0-10,D1", " MOVE.W #$B0,D1 ; (patched)"),
+    (1001, "MOVEA.L #txt_copyright,A0", " MOVEA.L #(debut_data+4734),A0 ; (patched)"),
+    // Text position: the Atari screen offset of column x (bitplanes) becomes a chunky offset.
+    (5564, "L003CB:MOVE.W D0,D2", "L003CB:LSR.W #3,D0 ; (patched: chunky offset of x)"),
+    (5565, "LSR.W #4,D2", " ASL.W #2,D0"),
+    (5566, "ASL.W #3,D2", " ADD.W D1,D0"),
+    (5567, "ADD.W D2,D1", " ;"),
+    (5568, "ANDI.W #$F,D0", " ;"),
+    (5569, "LSR.W #3,D0", " ;"),
+    (5570, "ADD.W D1,D0", " ;"),
     // The Smaky routine received a sound number which was sometimes stale (the title bounce
     // sets sound_address directly). Pass the sequence address instead, as the Atari did.
     (5948, "move.b _sm_sound_number,d0", " move.l sound_address,a0 ; (patched)")
